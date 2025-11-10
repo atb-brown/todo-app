@@ -29,6 +29,7 @@
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             margin-bottom: 2rem;
+            text-align: center;
         }
 
         .spinner {
@@ -76,12 +77,13 @@
             background: #f5f5f5;
             padding: 1rem;
             border-radius: 8px;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             font-size: 0.9rem;
         }
 
         .form-group {
             margin-bottom: 1.5rem;
+            text-align: left;
         }
 
         label {
@@ -143,6 +145,102 @@
             display: none;
         }
 
+        .add-todo-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .add-todo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .add-todo-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
         /* Snackbar styles */
         .snackbar {
             position: fixed;
@@ -176,48 +274,60 @@
         <h2>✓ Welcome to Your Todo App!</h2>
         <div class="user-info" id="userInfo"></div>
 
-        <h3>Create a New Todo</h3>
-        <form id="todoForm">
-            <div class="form-group">
-                <label for="task">Task *</label>
-                <input
-                        type="text"
-                        id="task"
-                        name="task"
-                        placeholder="Buy groceries"
-                        required
-                >
-            </div>
+        <button class="add-todo-btn" onclick="openModal()">+ Add New Todo</button>
+    </div>
+</div>
 
-            <div class="form-group">
-                <label for="details">Details</label>
-                <textarea
-                        id="details"
-                        name="details"
-                        placeholder="Get milk, eggs, and bread"
-                ></textarea>
-            </div>
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Create New Todo</h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="todoForm">
+                <div class="form-group">
+                    <label for="task">Task *</label>
+                    <input
+                            type="text"
+                            id="task"
+                            name="task"
+                            placeholder="Buy groceries"
+                            required
+                    >
+                </div>
 
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select id="status" name="status">
-                    <option value="TODO">To Do</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="DONE">Done</option>
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="details">Details</label>
+                    <textarea
+                            id="details"
+                            name="details"
+                            placeholder="Get milk, eggs, and bread"
+                    ></textarea>
+                </div>
 
-            <div class="form-group">
-                <label for="dueDate">Due Date</label>
-                <input
-                        type="date"
-                        id="dueDate"
-                        name="dueDate"
-                >
-            </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="DONE">Done</option>
+                    </select>
+                </div>
 
-            <button type="submit" class="btn">Add Todo</button>
-        </form>
+                <div class="form-group">
+                    <label for="dueDate">Due Date</label>
+                    <input
+                            type="date"
+                            id="dueDate"
+                            name="dueDate"
+                    >
+                </div>
+
+                <button type="submit" class="btn">Add Todo</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -350,6 +460,9 @@
             // Clear the form
             this.reset();
 
+            // Close the modal
+            closeModal();
+
             // Show success message
             showSnackbar('✅ Todo created successfully!');
 
@@ -372,6 +485,28 @@
             snackbar.classList.remove('show');
         }, 3000);
     }
+
+    // Modal functions
+    function openModal() {
+        document.getElementById('modalOverlay').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+    }
+
+    function closeModalOnOverlay(event) {
+        if (event.target.id === 'modalOverlay') {
+            closeModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
 
     // Run on page load
     handleCallback();
