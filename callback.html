@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App - Loading...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .info {
+            background: #f0f0f0;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            text-align: left;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #555;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .success {
+            color: #2e7d32;
+            background: #e8f5e9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="spinner"></div>
+    <h2>Processing login...</h2>
+    <div id="status"></div>
+    <div id="info" class="info" style="display: none;"></div>
+</div>
+
+<script>
+    // https://us-east-2bo6mlndj2.auth.us-east-2.amazoncognito.com/login?client_id=5aqil3a5vju8843n1ku5ffflek&response_type=code&scope=email+openid+profile&redirect_uri=https%3A%2F%2Fd84l1y8p4kdic.cloudfront.net
+    // Cognito Configuration
+    const COGNITO_DOMAIN = 'https://us-east-2bo6mlndj2.auth.us-east-2.amazoncognito.com';
+    const CLIENT_ID = '5aqil3a5vju8843n1ku5ffflek';
+    // const REDIRECT_URI = 'https://localhost:9000/callback.html';
+    // const REDIRECT_URI = 'https://todoapp-austin.s3-website.us-east-2.amazonaws.com/callback.html';
+    const REDIRECT_URI = 'https://d258q7p3bgb7ar.cloudfront.net/callback.html';
+
+    async function handleCallback() {
+        const statusDiv = document.getElementById('status');
+        const infoDiv = document.getElementById('info');
+
+        // Get the authorization code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        if (error) {
+            statusDiv.innerHTML = `<div class="error">Login failed: ${error}</div>`;
+            return;
+        }
+
+        if (!code) {
+            statusDiv.innerHTML = '<div class="error">No authorization code received</div>';
+            return;
+        }
+
+        try {
+            // Exchange authorization code for tokens
+            const tokenResponse = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    client_id: CLIENT_ID,
+                    code: code,
+                    redirect_uri: REDIRECT_URI
+                })
+            });
+
+            if (!tokenResponse.ok) {
+                throw new Error(`Token exchange failed: ${tokenResponse.status}`);
+            }
+
+            const tokens = await tokenResponse.json();
+
+            // Store tokens
+            sessionStorage.setItem('id_token', tokens.id_token);
+            sessionStorage.setItem('access_token', tokens.access_token);
+            sessionStorage.setItem('refresh_token', tokens.refresh_token);
+
+            // Decode the ID token to get user info
+            const idTokenPayload = JSON.parse(atob(tokens.id_token.split('.')[1]));
+
+            statusDiv.innerHTML = `
+                    <div class="success">
+                        ✓ Login successful!<br>
+                        Welcome, ${idTokenPayload.email}
+                    </div>
+                `;
+
+            infoDiv.style.display = 'block';
+            infoDiv.innerHTML = `
+                    <strong>User Information:</strong><br>
+                    Email: ${idTokenPayload.email}<br>
+                    User ID: ${idTokenPayload.sub}<br>
+                    <br>
+                    <strong>Tokens stored in sessionStorage</strong><br>
+                    (Check browser console for full token details)
+                `;
+
+            console.log('ID Token Payload:', idTokenPayload);
+            console.log('Access Token:', tokens.access_token);
+
+            // Redirect to main app after 2 seconds
+            setTimeout(() => {
+                // TODO: Change this to your main app page
+                statusDiv.innerHTML += '<br><br>Redirecting to app...';
+                // window.location.href = 'app.html';
+            }, 2000);
+
+        } catch (err) {
+            console.error('Error:', err);
+            statusDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            infoDiv.style.display = 'block';
+            infoDiv.textContent = err.stack;
+        }
+    }
+
+    // Run on page load
+    handleCallback();
+</script>
+</body>
+</html>
