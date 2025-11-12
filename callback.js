@@ -95,6 +95,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
+        // Check local storage to see if the user has logged in before.
+        const refreshToken = localStorage.getItem('refresh_token');
 
         if (error) {
             statusDiv.innerHTML = `<div class="error">Login failed: ${error}</div>`;
@@ -108,25 +110,14 @@
             return;
         }
 
-        if (!code) {
-            statusDiv.innerHTML = '<div class="error">No authorization code received</div>';
+        if (!code && !refreshToken) {
+            statusDiv.innerHTML = '<div class="error">No authorization.</div>';
             return;
         }
 
         try {
             // Exchange authorization code for tokens
-            const tokenResponse = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    grant_type: 'authorization_code',
-                    client_id: CLIENT_ID,
-                    code: code,
-                    redirect_uri: REDIRECT_URI
-                })
-            });
+            const tokenResponse = await getTokens(code, refreshToken);
 
             if (!tokenResponse.ok) {
                 throw new Error(`Token exchange failed: ${tokenResponse.status}`);
@@ -137,14 +128,15 @@
             // Store tokens
             sessionStorage.setItem('id_token', tokens.id_token);
             sessionStorage.setItem('access_token', tokens.access_token);
-            sessionStorage.setItem('refresh_token', tokens.refresh_token);
+            // If the response includes a refresh token, store it.
+            if (tokens.refresh_token) {
+                sessionStorage.setItem('refresh_token', tokens.refresh_token);
+                localStorage.setItem('refresh_token', tokens.refresh_token);
+            }
 
             // Decode the ID token to get user info
             const idTokenPayload = JSON.parse(atob(tokens.id_token.split('.')[1]));
             currentUser = idTokenPayload;
-
-            console.log('ID Token Payload:', idTokenPayload);
-            console.log('Access Token:', tokens.access_token);
 
             // Show app interface
             loadingCard.classList.add('hidden');
@@ -164,6 +156,43 @@
         } catch (err) {
             console.error('Error:', err);
             statusDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+        }
+    }
+
+    async function getTokens(code, refreshToken) {
+        if (refreshToken) {
+            // If using refresh token, clean up URL and remove the 'code' query param.
+            const windowUrl = new URL(window.location.href);
+            windowUrl.searchParams.delete('code');
+            window.history.replaceState({}, '', windowUrl.toString());
+
+            // Refresh authorization.
+            return await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    client_id: CLIENT_ID,
+                    refresh_token: refreshToken,
+                })
+            });
+        } else if (code) {
+            return await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    client_id: CLIENT_ID,
+                    code: code,
+                    redirect_uri: REDIRECT_URI
+                })
+            });
+        } else {
+            return {status: "Could not retrieve authorization."}
         }
     }
 
@@ -194,8 +223,6 @@
 
             const httpGetResponse = await response.json();
             const todos = httpGetResponse.todos;
-
-            console.log(JSON.stringify(todos, null, 2));
 
             if (!Array.isArray(todos) || todos.length === 0) {
                 todoListDiv.innerHTML = "<p>No todos yet. Add one below!</p>";
@@ -272,9 +299,6 @@
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.error || `Failed to create todo: ${response.status}`);
                     }
-
-                    const result = await response.json();
-                    console.log('Todo created successfully:', result);
 
                     this.reset();
                     closeModal();
