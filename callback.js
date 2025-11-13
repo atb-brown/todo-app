@@ -223,25 +223,59 @@
 
             const httpGetResponse = await response.json();
             const todos = httpGetResponse.todos;
-
-            if (!Array.isArray(todos) || todos.length === 0) {
-                todoListDiv.innerHTML = "<p>No todos yet. Add one below!</p>";
-                return;
-            }
-
-            todoListDiv.innerHTML = todos.map(todo => `
-                <div class="todo-item">
-                    <div class="todo-task">${escapeHtml(todo.task)}</div>
-                    <div class="todo-status">${escapeHtml(todo.status)}</div>
-                    ${todo.details ? `<div class="todo-details">${escapeHtml(todo.details)}</div>` : ""}
-                    ${todo.dueDate ? `<div class="todo-details">Due: ${escapeHtml(todo.dueDate)}</div>` : ""}
-                </div>
-            `).join('');
+            renderTodos(todos);
 
         } catch (error) {
             console.error("Error loading todos:", error);
             todoListDiv.innerHTML = `<div class="error">Error loading todos: ${error.message}</div>`;
         }
+    }
+
+    function renderTodos(todos) {
+        const todoListDiv = document.getElementById("todoList");
+        if (!Array.isArray(todos) || todos.length === 0) {
+            todoListDiv.innerHTML = "<p>No todos yet. Add one below!</p>";
+            return;
+        }
+
+        todoListDiv.innerHTML = todos.map(todo => `
+                <div class="todo-item">
+                    <div class="todo-task">${escapeHtml(todo.task)}</div>
+                    <div class="todo-status">
+                        <select name="statusSelect" class="status-selector" data-id="${todo.todoId}">
+                          <option value="TODO" ${todo.status === "TODO" ? "selected" : ""}>To do</option>
+                          <option value="IN_PROGRESS" ${todo.status === "IN_PROGRESS" ? "selected" : ""}>In Progress</option>
+                          <option value="DONE" ${todo.status === "DONE" ? "selected" : ""}>Done</option>
+                        </select>
+                    </div>
+                    ${todo.details ? `<div class="todo-details">${escapeHtml(todo.details)}</div>` : ""}
+                    ${todo.dueDate ? `<div class="todo-details">Due: ${escapeHtml(todo.dueDate)}</div>` : ""}
+                </div>
+            `).join('');
+
+        document.querySelectorAll('.status-selector').forEach(select => {
+            select.addEventListener('change', async e => {
+                const todoId = e.target.dataset.id;
+                const newStatus = e.target.value;
+                // console.log(`todoId: ${todoId}, newStatus: ${newStatus}`);
+                // console.log(`target: ${e.target}`);
+                await handleStatusChange(currentUser.sub, todoId, newStatus);
+            });
+        });
+    }
+
+    async function handleStatusChange(userId, todoId, newStatus) {
+        console.log("Selected value:", newStatus);
+        await fetch(
+            `https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos?userId=${userId}&todoId=${todoId}&newStatus=${newStatus}`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': sessionStorage.getItem('id_token')
+                }
+            }
+        );
     }
 
     // Basic escaping to avoid injecting markup from server responses

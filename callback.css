@@ -287,3 +287,39 @@ textarea {
     font-size: 0.9rem;
     color: #555;
 }
+
+/* Compact dropdown for status selection */
+.status-selector {
+    display: inline-block;
+    width: 75%;                 /* reduce width to 75% of container */
+    padding: 0.15rem 0.35rem;   /* less internal space */
+    font-size: 0.8rem;          /* smaller font size */
+    line-height: 1.1;           /* tighter vertical spacing */
+    font-weight: 500;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    appearance: none;           /* remove browser default padding/arrow styles */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-position: right 0.35rem center;
+    background-repeat: no-repeat;
+    background-size: 0.6em auto;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* hover/focus feedback */
+.status-selector:hover,
+.status-selector:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 3px rgba(102, 126, 234, 0.4);
+    outline: none;
+}
+
+/* optional: if inside a flex or block container, prevent stretching */
+.todo-status .status-selector {
+    width: 75%;
+    max-width: 120px;           /* prevents it from growing too wide */
+}
