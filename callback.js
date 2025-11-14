@@ -142,7 +142,7 @@
             loadingCard.classList.add('hidden');
             appCard.classList.remove('hidden');
 
-            await loadTodos(currentUser.sub);
+            await loadTodos();
 
             // Display user info
             const userInfoEl = document.getElementById('userInfo');
@@ -197,7 +197,7 @@
     }
 
     // loadTodos and related handlers
-    async function loadTodos(userId) {
+    async function loadTodos() {
         const todoListDiv = document.getElementById('todoList');
         todoListDiv.innerHTML = "Loading...";
 
@@ -208,7 +208,7 @@
             }
 
             const response = await fetch(
-                `https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos?userId=${userId}`,
+                `https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos`,
                 {
                     method: 'GET',
                     headers: {
@@ -259,15 +259,15 @@
                 const newStatus = e.target.value;
                 // console.log(`todoId: ${todoId}, newStatus: ${newStatus}`);
                 // console.log(`target: ${e.target}`);
-                await handleStatusChange(currentUser.sub, todoId, newStatus);
+                await handleStatusChange(todoId, newStatus);
             });
         });
     }
 
-    async function handleStatusChange(userId, todoId, newStatus) {
+    async function handleStatusChange(todoId, newStatus) {
         console.log("Selected value:", newStatus);
         await fetch(
-            `https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos?userId=${userId}&todoId=${todoId}&newStatus=${newStatus}`,
+            `https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos?todoId=${todoId}&newStatus=${newStatus}`,
             {
                 method: 'PATCH',
                 headers: {
@@ -304,7 +304,6 @@
 
                 try {
                     const todoData = {
-                        userId: currentUser.sub,
                         task: document.getElementById('task').value,
                         details: document.getElementById('details').value,
                         status: document.getElementById('statusSelect').value
@@ -337,7 +336,7 @@
                     this.reset();
                     closeModal();
                     showSnackbar('✅ Todo created successfully!');
-                    await loadTodos(currentUser.sub);
+                    await loadTodos();
                 } catch (error) {
                     console.error('Error creating todo:', error);
                     showSnackbar('❌ Error: ' + error.message);
