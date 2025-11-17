@@ -319,7 +319,7 @@
                         throw new Error('Not authenticated. Please log in again.');
                     }
 
-                    const response = await fetch('https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos', {
+                    const response = await fetch('https://1bwzek411a.execute-api.us-east-2.amazonaws.com/dev/todos/v2', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
